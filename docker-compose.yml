@@ -1,0 +1,37 @@
+# Compose v2 doesn't need a `version:` key
+services:
+  db:
+    image: postgres:16
+    container_name: pismo-db
+    environment:
+      POSTGRES_DB: pismo
+      POSTGRES_USER: pismo
+      POSTGRES_PASSWORD: pismo
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pismo -d pismo"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    ports:
+      - "5432:5432"
+
+  api:
+    build: .
+    container_name: pismo-api
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DB_DSN: postgres://pismo:pismo@db:5432/pismo?sslmode=disable
+      PORT: "8080"
+    ports:
+      - "8080:8080"
+
+  # Optional DB GUI. Uncomment if you want it.
+  # adminer:
+  #   image: adminer
+  #   container_name: pismo-adminer
+  #   depends_on:
+  #     - db
+  #   ports:
+  #     - "8082:8080"

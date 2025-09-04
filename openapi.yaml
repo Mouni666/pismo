@@ -1,0 +1,103 @@
+openapi: 3.0.3
+info:
+  title: Pismo Phase 1 API
+  version: 1.0.0
+servers:
+  - url: https://curly-tribble-r4vvwv44wx7v2w5pr-8080.app.github.dev/
+paths:
+  /accounts:
+    post:
+      summary: Create account
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [document_number]
+              properties:
+                document_number:
+                  type: string
+                  example: "12345678900"
+      responses:
+        "201":
+          description: created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  account_id: { type: integer }
+                  document_number: { type: string }
+        "4XX":
+          description: error
+    get:
+      summary: Get account by query param
+      parameters:
+        - in: query
+          name: accountId
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  account_id: { type: integer }
+                  document_number: { type: string }
+        "4XX":
+          description: error
+  /accounts/{accountId}:
+    get:
+      summary: Get account by path param
+      parameters:
+        - in: path
+          name: accountId
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  account_id: { type: integer }
+                  document_number: { type: string }
+        "4XX":
+          description: error
+  /transactions:
+    post:
+      summary: Create transaction
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [account_id, operation_type_id, amount]
+              properties:
+                account_id: { type: integer, example: 1 }
+                operation_type_id:
+                  type: integer
+                  enum: [1,2,3,4]
+                amount: { type: number, format: float, example: 123.45 }
+      responses:
+        "201":
+          description: created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  transaction_id: { type: integer }
+                  account_id: { type: integer }
+                  operation_type_id: { type: integer }
+                  amount: { type: number, format: float }
+                  event_date: { type: string, format: date-time }
+        "4XX":
+          description: error
