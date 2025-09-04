@@ -29,13 +29,10 @@ func (s *Server) createAccount(c *gin.Context) {
 		return
 	}
 
-	// If an account with the same document exists, return it.
+	// If an account with the same document exists, return 409 (tests expect this).
 	var existing Account
 	if err := s.DB.Where("document_number = ?", in.DocumentNumber).First(&existing).Error; err == nil {
-		c.JSON(http.StatusOK, gin.H{
-			"account_id":      existing.ID,
-			"document_number": existing.DocumentNumber,
-		})
+		c.JSON(http.StatusConflict, gin.H{"error": "account already exists"})
 		return
 	}
 
@@ -45,10 +42,8 @@ func (s *Server) createAccount(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusCreated, gin.H{
-		"account_id":      acc.ID,
-		"document_number": acc.DocumentNumber,
-	})
+	// Return the full struct (tests unmarshal into Account).
+	c.JSON(http.StatusCreated, acc)
 }
 
 // GET /accounts and GET /accounts/:accountId
@@ -78,10 +73,8 @@ func (s *Server) getAccount(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"account_id":      acc.ID,
-		"document_number": acc.DocumentNumber,
-	})
+	// Return the full struct.
+	c.JSON(http.StatusOK, acc)
 }
 
 /* ===========================
@@ -122,23 +115,13 @@ func (s *Server) createTransaction(c *gin.Context) {
 		return
 	}
 
-	// Enforce sign: 1/2/3 -> negative; 4 -> positive
-	amount := in.Amount
-	switch in.OperationTypeID {
-	case 1, 2, 3:
-		if amount > 0 {
-			amount = -amount
-		}
-	case 4:
-		if amount < 0 {
-			amount = -amount
-		}
-	}
+	// Normalize amount by operation type
+	amt := normalizeAmount(in.OperationTypeID, in.Amount)
 
 	t := Transaction{
 		AccountID:       in.AccountID,
-		OperationTypeID: in.OperationTypeID, // int in your model
-		Amount:          amount,
+		OperationTypeID: in.OperationTypeID,
+		Amount:          amt,
 		EventDate:       time.Now().UTC(),
 	}
 
@@ -147,11 +130,6 @@ func (s *Server) createTransaction(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusCreated, gin.H{
-		"transaction_id":   t.ID,
-		"account_id":       t.AccountID,
-		"operation_type_id": t.OperationTypeID,
-		"amount":           t.Amount,
-		"event_date":       t.EventDate,
-	})
+	// Return the full struct (tests unmarshal into Transaction).
+	c.JSON(http.StatusCreated, t)
 }
